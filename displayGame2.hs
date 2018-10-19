@@ -13,17 +13,17 @@ import Data.Char
 -- takes current world and returns picture
 render :: (Result, Turn) -> Picture
 render (ContinueGame state, turn) =
-   pictures (renderBoard state ++ renderLines state turn)
-
+   pictures (renderBoard state ++ renderLines state turn++[renderScore (ContinueGame state, turn)])
 render (EndOfGame z state, Person)
-    | z == 1 = specialRender (EndOfGame z state, Person) "Computer Won"
-    | z == 0 = specialRender (EndOfGame z state, Person) "It's a tie"
-    | otherwise = specialRender (EndOfGame z state, Person) "You won"
+    | z == 1 = specialRender (EndOfGame z state, Person) "Computer Won! Click 'r' to restart game"
+    | z == 0 = specialRender (EndOfGame z state, Person) "It's a tie! Click 'r' to restart game"
+    | otherwise = specialRender (EndOfGame z state, Person) "You won! Click 'r' to restart game"
 
 render (EndOfGame z state, Computer)
-    | z == 1 = specialRender (EndOfGame z state, Person) "You won"
-    | z == 0 = specialRender (EndOfGame z state, Person) "It's a tie"
-    | otherwise = specialRender (EndOfGame z state, Person) "Computer Won"
+    | z == 1 = specialRender (EndOfGame z state, Computer) "You won! Click 'r' to restart game"
+    | z == 0 = specialRender (EndOfGame z state, Computer) "It's a tie! Click 'r' to restart game"
+    | otherwise = specialRender (EndOfGame z state, Computer) "Computer Won! Click 'r' to restart game"
+
 
 render (StartOfGame state, __)= scale 0.1 0.1 (pictures[translate 500 300 (Text "Let's Play!"), translate 500 0 (Text "Please press a number from 1-9")])
 
@@ -50,11 +50,11 @@ renderLines (State ((lst1,lst2),boxes) avail n) turn
 -- renders a board with a EndOfGame result
 specialRender:: (Result, Turn) -> [Char] -> Picture
 specialRender (result, turn) stringInput =
-    pictures (renderBoard (giveState result) ++ renderLines (giveState result) turn ++ imageText stringInput)
+    pictures (renderBoard (giveState result) ++ renderLines (giveState result) turn ++ [translate 0 (-100)(imageText stringInput)] ++ [renderScore(result, turn)])
 
 -- creates Picture of given text so it is scaled and translated to appropriate location on window
-imageText :: [Char] -> [Picture]
-imageText str = [scale 0.1 0.1 (translate 500 300 (Text str))]
+imageText :: [Char] -> Picture
+imageText str = scale 0.1 0.1 (translate 0 300 (Text str))
 
 --handles KeyEvent
 handleEvent:: Event -> (Result, Turn) -> (Result, Turn)
@@ -62,28 +62,12 @@ handleEvent (EventKey (Char c) Down _ (x,y)) (StartOfGame state, Person) -- Star
     |n `elem` [1..9] = (ContinueGame (restart n), Person)
     |otherwise = (StartOfGame state,Person) --invalid key Event, try again
     where n = (digitToInt c)
-    
---renders Picture of score given current world
-renderScore:: (Result, Turn) -> Picture
-renderScore (result, Person)= -- renders during Person's turn 
-      scale 0.1 0.1
-        (pictures
-          [translate 500 300 (Text ("Score:")),
-             translate 500 600 (color r (Text (show myboxes))), color b (Text (show thyboxes ))])
-      where b = makeColor 1.0 0.0 0.0 1.0
-            r = makeColor 0.0 0.0 1.0 1.0
-            State (lines,(myboxes,thyboxes)) avail n = giveState(result)
-renderScore (result, Computer)=
-      scale 0.1 0.1 -- renders during Computer's turn
-      (pictures
-        [translate 500 300 (Text ("Score:")),
-           translate 500 600 (color r (Text (show thyboxes))), color b (Text (show myboxes))])
-      where b = makeColor 1.0 0.0 0.0 1.0
-            r = makeColor 0.0 0.0 1.0 1.0
-            State (lines,(myboxes,thyboxes)) avail n = giveState(result)
-
 
 handleEvent _ (StartOfGame state, Person)= (StartOfGame state,Person) -- handling error inputs for StartOfGame
+
+handleEvent (EventKey (Char c) Down _ (x,y)) (EndOfGame i state, Person) -- StartOfGame, where window is empty and asks for board size
+    |c=='r'= (StartOfGame state, Person)
+    |otherwise = (EndOfGame i state, Person) --invalid key Event, try again
 
 handleEvent (EventKey (MouseButton LeftButton) Up _ (x,y)) (result, Person)  --handle mouse event during Game
     |move `elem` avail = me_play dNb result simple_opponent Person move
@@ -92,6 +76,22 @@ handleEvent (EventKey (MouseButton LeftButton) Up _ (x,y)) (result, Person)  --h
           State b avail n = giveState result
 
 handleEvent _ (result, turn) = (result, turn) -- handle any invalid key states
+
+    
+--renders Picture of score given current world
+renderScore:: (Result, Turn) -> Picture
+renderScore (result, Person)= -- renders during Person's turn 
+      pictures [translate 0 (-170) (imageText "Players "), translate 50 (-170) (color r (imageText "You :")), translate 100 (-170)(color b (imageText "Computer")),translate 0 (-200) (imageText "Score "), translate 50 (-200) (color r (imageText (show myboxes++ " :  "))), translate 100 (-200)(color b (imageText (show thyboxes)))]
+      where r = makeColor 1.0 0.0 0.0 1.0
+            b = makeColor 0.0 0.0 1.0 1.0
+            State (l,(myboxes,thyboxes)) avail n = giveState(result)
+renderScore (result, Computer)=
+      pictures [translate 0 (-170) (imageText "Players "), translate 50 (-170) (color r (imageText "You :")), translate 100 (-170)(color b (imageText "Computer")),translate 0 (-200) (imageText "Score "), translate 50 (-200) (color r (imageText (show thyboxes++ " :  "))), translate 100 (-200)(color b (imageText (show myboxes)))]
+      where r = makeColor 1.0 0.0 0.0 1.0
+            b = makeColor 0.0 0.0 1.0 1.0
+            State (lines,(myboxes,thyboxes)) avail n = giveState(result)
+
+
 
 --returns the Bar (line) given a coordinate
 -- helper to determine what the key event selected in handleEvent
