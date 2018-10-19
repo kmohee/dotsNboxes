@@ -15,14 +15,14 @@ render :: (Result, Turn) -> Picture
 render (ContinueGame state, turn) =
    pictures (renderBoard state ++ renderLines state turn++[renderScore (ContinueGame state, turn)])
 render (EndOfGame z state, Person)
-    | z == 1 = specialRender (EndOfGame z state, Person) "Computer Won! Click 'r' to restart game"
-    | z == 0 = specialRender (EndOfGame z state, Person) "It's a tie! Click 'r' to restart game"
-    | otherwise = specialRender (EndOfGame z state, Person) "You won! Click 'r' to restart game"
+    | z == 1 = specialRender (EndOfGame z state, Person) "Computer Won! Click r to restart game"
+    | z == 0 = specialRender (EndOfGame z state, Person) "It's a tie! Click r to restart game"
+    | otherwise = specialRender (EndOfGame z state, Person) "You won! Click r to restart game"
 
 render (EndOfGame z state, Computer)
-    | z == 1 = specialRender (EndOfGame z state, Computer) "You won! Click 'r' to restart game"
-    | z == 0 = specialRender (EndOfGame z state, Computer) "It's a tie! Click 'r' to restart game"
-    | otherwise = specialRender (EndOfGame z state, Computer) "Computer Won! Click 'r' to restart game"
+    | z == 1 = specialRender (EndOfGame z state, Computer) "You won! Click r to restart game"
+    | z == 0 = specialRender (EndOfGame z state, Computer) "It's a tie! Click r to restart game"
+    | otherwise = specialRender (EndOfGame z state, Computer) "Computer Won! Click r to restart game"
 
 
 render (StartOfGame state, __)= scale 0.1 0.1 (pictures[translate 500 300 (Text "Let's Play!"), translate 500 0 (Text "Please press a number from 1-9")])
